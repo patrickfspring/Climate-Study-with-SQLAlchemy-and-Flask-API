@@ -109,15 +109,14 @@ def start_date(startd):
     resultslist = session.query(func.min(Measurement.tobs),\
                                 func.max(Measurement.tobs),\
                                 func.round(func.avg(Measurement.tobs),1)).\
-                                filter(Measurement.date >= startd)
+                                filter(Measurement.date >= startd).all()
 
     session.close()
     
     # Convert list of tuples into normal list
-    # all_func_tobs = list(np.ravel(results))
+    all_func_tobs = list(np.ravel(resultslist))
     
-    # return jsonify(resultslist = list)
-    # return json.dumps(resultslist)
+    return jsonify(all_func_tobs)
     
 @app.route("/api/v1.0/<start>/<end>")
 def start_end_dates(start, end):

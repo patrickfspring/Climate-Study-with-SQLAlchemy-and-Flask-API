@@ -53,7 +53,7 @@ def precipitation():
 
     """Return a list of all 12 months of precipitation"""
     # Query all precipitation related information
-    results = session.query(func.round(func.sum(Measurement.prcp),2), Measurement.date).\
+    results = session.query(Measurement.date, func.round(func.sum(Measurement.prcp),2)).\
     filter(Measurement.date > '2016-08-22').\
     group_by(Measurement.date).\
     order_by((Measurement.date).desc()).all()
@@ -61,6 +61,7 @@ def precipitation():
     session.close()
 
     # Convert list of tuples into normal list
+    results = dict(results) 
     all_precipitation = list(np.ravel(results))
 
     return jsonify(all_precipitation)
@@ -78,6 +79,7 @@ def stations():
     session.close()
 
     # Convert list of tuples into normal list
+    results = dict(results)
     all_stations = list(np.ravel(results))
 
     return jsonify(all_stations)
@@ -89,13 +91,14 @@ def tobs():
     session = Session(engine)
 
     """Return a list of all temperature observations for the most active station"""
-    # Query all precipitation related information
+    # Query all temperature observation related information
     results = session.query(Measurement.date, Measurement.tobs).\
         filter(Measurement.station == 'USC00519281').all()
 
     session.close()
 
     # Convert list of tuples into normal list
+    results = dict(results)
     all_tobs = list(np.ravel(results))
 
     return jsonify(all_tobs)
@@ -108,23 +111,20 @@ def start_date(start):
 
     """Return a calculated list of TMIN, TMAX, and TAVG for all dates greater than or equal to the start date"""
     
-    results1 = session.query(func.min(Measurement.tobs)).\
-        filter(Measurement.date >= start).all()        
-    results2 = session.query(func.max(Measurement.tobs)).\
-        filter(Measurement.date >= start).all() 
-    results3 = session.query(func.round(func.avg(Measurement.tobs),1)).\
-        filter(Measurement.date >= start).all()
+    results = session.query(func.min(Measurement.tobs),\
+                            func.max(Measurement.tobs),\
+                            func.round(func.avg(Measurement.tobs),1)).\
+                            filter(Measurement.date >= start).all()
 
     session.close()
     
     # Create a dictionary to assign 'name tags' to the calculated list
 
-    func_dict = {}
-    func_dict["min temperature"] = results1
-    func_dict["max temperature"] = results2
-    func_dict["avg temperature"] = results3
-    
+    tag_list = ["min temperature", "max temperature", "avg temperature"]
+    zipped_list = zip(tag_list, results)
+
     # all_func_values.append(func_dict)  
+    func_dict = dict(zipped_list)
     start_func_tobs = list(np.ravel(func_dict))
     return jsonify(start_func_tobs)    
    
